@@ -1,0 +1,21 @@
+# Set variables
+$AuditDirectory = "C:\test"
+$BlobStorageAccountName = "storccan01"
+$BlobStorageContainerName = "auditcc"
+$StorageAccessKey = "OvIq8xj0TkFHDWBZZnvR6wVPocp7FN/fXPceZ5oBJLazFc9jhwBgOWnPgzsTsEbwDYYXGJ/dUrCJ+AStVU2O2Q=="
+
+# Import Azure PowerShell module
+Import-Module Az.Storage
+
+# Get audit files in the directory with last modified date less than or equal to today's date
+$AuditFiles = Get-ChildItem -Path $AuditDirectory -Filter "Trex-audit_*" | Where-Object { $_.LastWriteTime.Date -lt (Get-Date).Date -or $_.LastWriteTime.Date -gt (Get-Date).Date }
+
+# Connect to Azure Storage Account
+$StorageContext = New-AzStorageContext -StorageAccountName $BlobStorageAccountName -StorageAccountKey $StorageAccessKey
+
+# Upload audit files to Blob storage
+foreach ($AuditFile in $AuditFiles) {
+    Set-AzStorageBlobContent -Context $StorageContext -Container $BlobStorageContainerName -File $AuditFile.FullName -Blob $AuditFile.Name
+    # Optionally, you can remove the file after upload
+    Remove-Item -Path $AuditFile.FullName
+}
